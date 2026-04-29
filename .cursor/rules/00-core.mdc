@@ -1,0 +1,15 @@
+---
+description: Always-on Cursor pointer to AGENTS.md plus Cursor-specific behaviors.
+alwaysApply: true
+---
+
+- Read and follow `AGENTS.md` at the project root before any task. It is the
+  source of truth for project conventions, scope, and git boundaries.
+- Use Plan mode for anything beyond a true one-liner. Do not start editing
+  until the user has approved the plan.
+- For files larger than ~500 lines, prefer SEARCH/REPLACE-style edits over
+  full-file rewrites. Keep diffs surgical.
+- If a task looks like it will exceed ~300 lines of new/changed code, stop and
+  propose a split before writing more.
+- Never merge a PR. Never force-push. Pushing to a feature branch and opening
+  a PR is fine; merging is the human's job.

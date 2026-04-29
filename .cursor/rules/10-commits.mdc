@@ -1,0 +1,79 @@
+---
+description: Commit message format and atomic-commit discipline. Loaded on every task.
+alwaysApply: true
+---
+
+# Commit discipline
+
+## One logical change per commit
+
+- A refactor and a feature are two commits.
+- A bug fix and an unrelated rename are two commits.
+- Generated files / lockfiles / vendored deps go in their own commit.
+
+## Conventional Commits, "why"-first
+
+Format:
+
+```
+<type>(<scope>): <why-it-matters, imperative, <=72 chars>
+
+<body explaining: what changed, why, alternatives considered, follow-ups deferred>
+```
+
+Allowed types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`,
+`ci`, `chore`, `revert`.
+
+## Header rules
+
+- Imperative mood: "add", not "added" / "adds".
+- Lowercase after the colon.
+- No trailing period.
+- Aim for <=72 characters; hard limit 100.
+- The subject after `:` should explain *why this commit matters*, not just
+  what files changed.
+
+## Body rules
+
+For anything non-trivial (more than ~10 lines or any logic change):
+
+- Blank line after the header.
+- Wrap at ~72 chars.
+- Cover: what changed, why, what was considered and rejected, any follow-ups
+  deferred to a future commit.
+- Reference the PR / issue / ticket if there is one.
+
+## Good examples
+
+```
+feat(parser): detect Arabic poetic meter for line-break heuristic
+
+The line-break engine in §2 needs to know the meter so it can avoid
+breaking inside a foot. Considered hand-tuned regexes per meter but the
+prosody table is small enough to encode directly. Deferred: caching the
+meter per stanza — premature until profiling shows it matters.
+```
+
+```
+fix(ui): prevent right-to-left bleed in mixed-text paragraphs
+
+Paragraphs that mixed Arabic and Latin runs were inheriting the last
+run's direction. Fix: explicit `dir` attribute per run. Considered the
+CSS `unicode-bidi: isolate` route but it broke selection in Word's
+rendering host.
+```
+
+```
+refactor(io): extract file loading to prep for streaming
+
+No behavior change. Splits `loader.py` into `read.py` + `parse.py` so an
+upcoming streaming path can replace `read.py` without touching parsing.
+```
+
+## Bad examples (never do this)
+
+- `update parser` — what changed? why?
+- `fix bug` — which bug? why was it a bug?
+- `WIP` — never commit WIP to a shared branch.
+- `address review comments` — say *which* comments and *what* you changed.
+- `refactor + add feature X` — two concerns, two commits.

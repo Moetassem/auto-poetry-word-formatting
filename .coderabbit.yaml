@@ -1,0 +1,103 @@
+# CodeRabbit configuration — solo-dev defaults
+# Schema: https://docs.coderabbit.ai/reference/configuration
+
+language: en
+
+# Voice / signal-to-noise (max 250 chars per CodeRabbit schema)
+tone_instructions: >
+  Reviewing PRs for a solo dev. Be concise and direct. Prioritize
+  correctness, security, and scope discipline (catch overkill and scope
+  creep). Skip style nitpicks - a linter handles those. Don't repeat what
+  the diff shows.
+
+early_access: false
+enable_free_tier: true
+
+reviews:
+  # "chill" reduces noise, "assertive" surfaces more. Solo devs usually
+  # prefer chill — switch to assertive on high-stakes repos.
+  profile: chill
+
+  # Don't auto-block merges. The human is the gatekeeper.
+  request_changes_workflow: false
+
+  # Useful surfaces
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: false
+  assess_linked_issues: true
+
+  # Auto-review every PR (including yours). This is the whole point.
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches:
+      - main
+      - master
+
+  # Per-path guidance — agent rules apply to AI-generated code review too.
+  path_instructions:
+    - path: "**/*"
+      instructions: >
+        Flag any change that violates the project's AGENTS.md rules:
+        scope creep beyond the PR description, placeholder code (TODO,
+        "rest of code...", pass-only stubs), unrequested refactors mixed
+        with feature work, new dependencies introduced without mention in
+        the PR description, or diffs larger than ~300 lines without a
+        stated reason. Suggest splitting the PR when appropriate.
+    - path: "**/*.{md,txt}"
+      instructions: >
+        Documentation-only changes. Skim, don't deep-review.
+
+  # Don't waste cycles on noise
+  path_filters:
+    - "!**/*.lock"
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/node_modules/**"
+    - "!**/.venv/**"
+    - "!**/__pycache__/**"
+    - "!**/*.svg"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.pdf"
+
+  # Built-in tools (most are safe to leave on; turn off any that get noisy)
+  tools:
+    github-checks:
+      enabled: true
+      timeout_ms: 90000
+    languagetool:
+      enabled: false # off by default — solo devs find prose nits noisy
+    markdownlint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    ruff:
+      enabled: true
+    eslint:
+      enabled: true
+    yamllint:
+      enabled: true
+    gitleaks:
+      enabled: true # ALWAYS keep this on — catches accidental secrets
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto

@@ -1,0 +1,26 @@
+# <type>(<scope>): <why-it-matters, imperative, <=72 chars>
+#
+# Allowed types: feat, fix, refactor, perf, test, docs, build, ci, chore, revert
+#
+# --- Body (delete if commit is truly trivial) -------------------------------
+#
+# What changed:
+#   -
+#
+# Why:
+#   -
+#
+# Considered & rejected:
+#   -
+#
+# Follow-ups deferred:
+#   -
+#
+# Refs: #<issue or PR>
+#
+# --- Reminders --------------------------------------------------------------
+# - One logical change per commit. Refactor + feature = two commits.
+# - Imperative mood. Lowercase after the colon. No trailing period.
+# - Subject explains WHY, not just what files changed.
+# - Wrap body at ~72 chars.
+# - Lines starting with '#' are stripped from the final commit message.

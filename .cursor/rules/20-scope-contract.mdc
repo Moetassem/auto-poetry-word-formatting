@@ -1,0 +1,48 @@
+---
+description: Enforce the 5-line scope contract before implementing any non-trivial task. Use whenever the user asks for a feature, bug fix, refactor, or anything that will touch code.
+alwaysApply: false
+---
+
+# Scope contract
+
+Before writing or modifying code for any non-trivial task, output exactly this
+block, fill it in, and then **stop and wait for explicit approval**:
+
+```
+Goal:           <one sentence describing the outcome>
+Files touched:  <explicit list of file paths you plan to create or edit>
+Out of scope:   <what you are NOT doing, even if tempting>
+Done when:      <observable check: a test passes, a command outputs X, etc.>
+Rollback:       <single command or short steps to undo this change>
+```
+
+## When to skip
+
+You may skip the contract for clearly trivial work:
+
+- Typo fixes
+- Single-variable renames
+- Single-line obvious bug fixes
+- Pure formatting / whitespace / comment edits
+
+Use judgment. If you have to think about it for more than a few seconds, it
+is not trivial — output the contract.
+
+## When the scope changes mid-task
+
+If during implementation you realise the contract was wrong (more files
+needed, scope was too narrow, an unforeseen dependency surfaced):
+
+1. Stop.
+2. Show the updated contract with what changed and why.
+3. Wait for approval before continuing.
+
+Do not silently expand scope. Do not add files that were not in the original
+"Files touched" list without renegotiating.
+
+## Why this exists
+
+Large, sprawling AI changes are the #1 cause of "I lost track of what the
+agent did". The contract forces a tiny written commitment before any code is
+generated, which (a) lets the user catch wrong assumptions in seconds, and
+(b) makes the resulting diff easy to verify against the stated goal.
