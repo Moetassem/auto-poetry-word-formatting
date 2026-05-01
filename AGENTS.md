@@ -14,10 +14,10 @@ explicitly overrides it in the current session.
 ## Project context
 
 <!-- Fill these in per project. Keep terse. -->
-- **What this project is:** _<one sentence>_
-- **Primary language / stack:** _<e.g. Python 3.12 + FastAPI / TypeScript + Next.js / VBA>_
-- **How to run / test:** _<commands the agent should use to verify changes>_
-- **Canonical examples:** _<file paths the agent should mimic>_
+- **What this project is:** Automatic Aesthatic fomatting for Arabic Poetry in MS Word 
+- **Primary language / stack:** VBA scripts/macros
+- **How to run / test:** manual testing
+- **Canonical examples:** auto-poetry-word-formatting/macros/FormatPoem.bas
 
 ---
 
@@ -36,6 +36,9 @@ For anything beyond a true one-liner (typo, rename, single-line bug fix):
 If the user's request is ambiguous, ask one or two pointed clarifying
 questions before planning. Do not guess on questions that change the design.
 
+For bug fixes/new features, always write a failing test first. The fix is only complete
+when that test passes with the fewest lines of code possible.
+
 ### 2. The scope contract
 
 Every non-trivial task must begin with this exact 5-line block, then wait for
@@ -45,8 +48,10 @@ approval:
 Goal:           <one sentence>
 Files touched:  <explicit list, paths>
 Out of scope:   <what we are NOT doing>
+Tests added:    <Tests written for this feature/bugfix>
 Done when:      <observable check>
 Rollback:       <how to revert>
+Reverse Context:<code that became redundant/deleted>
 ```
 
 If during implementation you discover the scope was wrong, **stop and renegotiate
@@ -54,9 +59,11 @@ the contract**. Do not silently expand scope.
 
 ### 3. Diff budget: ~300 lines
 
-If a change would exceed roughly 300 lines of new/modified code (excluding
-generated files, lockfiles, snapshots), stop and propose a split into smaller
-commits or PRs. The user must approve any larger change explicitly.
+Use the smallest possible edit. Do not rewrite an entire file to change one
+function. If a change would exceed roughly 300 lines of new/modified code
+(excluding generated files, lockfiles, snapshots), stop and propose a split
+into smaller commits or PRs. The user must approve any larger change
+explicitly.
 
 Generated files, vendored dependencies, and lockfiles do not count toward this
 budget but must be committed separately.
@@ -66,8 +73,10 @@ budget but must be committed separately.
 - Touch only the files needed for the requested change.
 - Never refactor unrelated code.
 - Never add "nice-to-haves" the user did not ask for.
-- Never expand abstractions, add config layers, or introduce new dependencies
-  without explicit approval.
+- Never add "just in case" logic, extra abstractions, or "defensive" code
+  unless explicitly requested.
+- Never add a new library or dependency, expand abstractions, or add config
+  layers without asking for permission first.
 - If you notice something worth changing, list it as a follow-up suggestion in
   the PR description — do not do it.
 
@@ -115,7 +124,8 @@ does.
 
 Before introducing a new pattern, library, or file structure, find the
 canonical example in this codebase and mimic it. If no precedent exists, ask
-which direction to set.
+which direction to set. Always search the codebase for an existing utility
+before writing a new helper.
 
 ---
 
