@@ -160,6 +160,10 @@ before writing a new helper.
 11. STOP. The user reviews and merges.
 ```
 
+> Steps 7–11 are mandatory once `git remote -v` shows a remote. Do not stop
+> after step 6 (implement) unless the user explicitly says "don't commit" or
+> the project has no remote configured yet.
+
 ---
 
 ## When the user says "fix it" or gives a tiny task
