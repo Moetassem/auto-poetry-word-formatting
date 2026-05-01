@@ -148,6 +148,8 @@ Private Sub FillCell(ByVal c As Cell, ByVal text As String)
     r.Collapse Direction:=wdCollapseStart
     r.Text = text
     c.Range.ParagraphFormat.ReadingOrder = wdReadingOrderRtl
+    c.Range.ParagraphFormat.Alignment = wdAlignParagraphCenter
+    c.VerticalAlignment = wdCellAlignVerticalCenter
 End Sub
 
 ' =====================================================================
