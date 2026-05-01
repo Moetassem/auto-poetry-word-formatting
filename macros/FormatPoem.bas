@@ -134,6 +134,9 @@ Private Sub ConvertLineToPoetryTable(ByVal rngLine As Range, _
         .Columns(2).PreferredWidthType = wdPreferredWidthPercent
         .Columns(2).PreferredWidth = 50
 
+        ' Cell margins: bottom = 0.2 cm (others left at Word defaults)
+        .BottomPadding = Application.CentimetersToPoints(0.2)
+
         .Rows(1).Range.ParagraphFormat.ReadingOrder = wdReadingOrderRtl
     End With
 
