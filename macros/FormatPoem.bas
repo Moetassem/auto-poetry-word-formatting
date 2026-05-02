@@ -198,8 +198,10 @@ Public Sub AdjustPoetryTableMargins()
     Set tbl = Selection.Tables(1)
 
     Dim origLeft As Single, origRight As Single
+    Dim origAlign As Long
     origLeft = tbl.LeftPadding
     origRight = tbl.RightPadding
+    origAlign = tbl.Range.ParagraphFormat.Alignment
 
     On Error GoTo Cleanup
     Application.ScreenUpdating = False
@@ -279,6 +281,10 @@ Public Sub AdjustPoetryTableMargins()
     tbl.LeftPadding = finalPad
     tbl.RightPadding = finalPad
 
+    ' Distribute-justify every cell (Ctrl+Shift+J) so each hemistich
+    ' spreads evenly across the now-snug content area.
+    tbl.Range.ParagraphFormat.Alignment = wdAlignParagraphDistribute
+
     Application.ScreenUpdating = True
     Exit Sub
 
@@ -286,6 +292,7 @@ Cleanup:
     On Error Resume Next
     tbl.LeftPadding = origLeft
     tbl.RightPadding = origRight
+    tbl.Range.ParagraphFormat.Alignment = origAlign
     Application.ScreenUpdating = True
 End Sub
 
