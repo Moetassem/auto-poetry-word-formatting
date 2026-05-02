@@ -14,7 +14,7 @@ Goal:           Manual macro that, given a poetry table at the cursor,
                 padding applies to every cell, so narrower-text cells
                 gain visibly more breathing room.
 Files touched:  auto-poetry-word-formatting/macros/FormatPoem.bas
-                (one new Public Sub + two private helpers; existing
+                (one new Public Sub + three private helpers; existing
                 routines untouched)
                 auto-poetry-word-formatting/contracts/0002-snug-table-margins.md
                 (this file, new)
