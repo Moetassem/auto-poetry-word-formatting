@@ -74,6 +74,7 @@ Public Sub FormatArabicPoetryOnEnter()
     ' reverts the line break AND any table create/append the macro did,
     ' landing the cursor back on the original `**` line.
     Application.UndoRecord.StartCustomRecord "Format Arabic Poetry"
+    On Error GoTo ErrorHandler
 
     wasInTable = Selection.Information(wdWithInTable)
     Selection.TypeParagraph
@@ -81,7 +82,7 @@ Public Sub FormatArabicPoetryOnEnter()
 
     On Error Resume Next
     Set previousPara = Selection.Range.Paragraphs(1).Previous
-    On Error GoTo 0
+    On Error GoTo ErrorHandler
     If previousPara Is Nothing Then GoTo Done
 
     prevText = StripTrailingCR(previousPara.Range.Text)
@@ -98,6 +99,11 @@ Public Sub FormatArabicPoetryOnEnter()
     Application.ScreenUpdating = True
 
 Done:
+    Application.UndoRecord.EndCustomRecord
+    Exit Sub
+
+ErrorHandler:
+    Application.ScreenUpdating = True
     Application.UndoRecord.EndCustomRecord
 End Sub
 
