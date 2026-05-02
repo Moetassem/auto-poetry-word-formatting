@@ -341,8 +341,9 @@ Private Function CellTextSpan(ByVal c As Cell) As Single
 
     ' Information returns -1 when the position can't be determined.
     If y1 < 0 Or y2 < 0 Then
-        CellTextSpan = 0
-        Exit Function
+        Err.Raise vbObjectError + 513, "CellTextSpan", _
+                  "Unable to resolve cell layout position."
+    End If
     End If
 
     CellTextSpan = Abs(y2 - y1)
