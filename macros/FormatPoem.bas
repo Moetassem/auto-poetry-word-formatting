@@ -344,7 +344,6 @@ Private Function CellTextSpan(ByVal c As Cell) As Single
         Err.Raise vbObjectError + 513, "CellTextSpan", _
                   "Unable to resolve cell layout position."
     End If
-    End If
 
     CellTextSpan = Abs(y2 - y1)
 End Function
