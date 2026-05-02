@@ -70,18 +70,24 @@ Public Sub FormatArabicPoetryOnEnter()
     Dim sepPos As Long
     Dim adjacentTbl As Table
 
+    ' Wrap the whole Enter handler in a custom undo record so one Ctrl+Z
+    ' reverts the line break AND any table create/append the macro did,
+    ' landing the cursor back on the original `**` line.
+    Application.UndoRecord.StartCustomRecord "Format Arabic Poetry"
+    On Error GoTo ErrorHandler
+
     wasInTable = Selection.Information(wdWithInTable)
     Selection.TypeParagraph
-    If wasInTable Then Exit Sub
+    If wasInTable Then GoTo Done
 
     On Error Resume Next
     Set previousPara = Selection.Range.Paragraphs(1).Previous
-    On Error GoTo 0
-    If previousPara Is Nothing Then Exit Sub
+    On Error GoTo ErrorHandler
+    If previousPara Is Nothing Then GoTo Done
 
     prevText = StripTrailingCR(previousPara.Range.Text)
     sepPos = InStr(1, prevText, POETRY_SEPARATOR, vbBinaryCompare)
-    If sepPos <= 0 Then Exit Sub
+    If sepPos <= 0 Then GoTo Done
 
     Application.ScreenUpdating = False
     Set adjacentTbl = AdjacentPoetryTable(previousPara)
@@ -91,6 +97,14 @@ Public Sub FormatArabicPoetryOnEnter()
         AppendLineToPoetryTable adjacentTbl, previousPara, prevText, sepPos
     End If
     Application.ScreenUpdating = True
+
+Done:
+    Application.UndoRecord.EndCustomRecord
+    Exit Sub
+
+ErrorHandler:
+    Application.ScreenUpdating = True
+    Application.UndoRecord.EndCustomRecord
 End Sub
 
 ' =====================================================================
