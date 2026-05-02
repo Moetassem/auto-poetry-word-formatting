@@ -156,6 +156,215 @@ Private Sub FillCell(ByVal c As Cell, ByVal text As String)
 End Sub
 
 ' =====================================================================
+' Manual: snug the table's left/right cell margins to the widest text
+' ---------------------------------------------------------------------
+' For the table at the cursor, find the largest left/right cell padding
+' (Word's "default cell margins") that doesn't force any cell's text
+' onto a new line, then back off by 0.1 cm per side so the widest text
+' sits in its cell with a ~0.2 cm horizontal halo. The same padding
+' applies to every cell, so narrower-text cells gain visibly more
+' breathing room.
+'
+' If there isn't room for the 0.2 cm halo, the halo is dropped and the
+' margins go right up to the wrap boundary. If a cell already wraps at
+' zero padding, its natural vertical text span at zero padding is taken
+' as that cell's baseline so the pre-existing wrap doesn't keep the
+' bisection pinned at zero.
+'
+' Implementation: bisect the padding value, and after each step ask
+' Word's own layout engine whether any cell's text now spans more
+' vertical distance than it did at zero padding. The signal is the
+' vertical gap between the cursor at the cell text's logical start
+' and its logical end: ~0 for one display line, grows by ~one line
+' height per wrap. This avoids fragile horizontal pixel-width
+' measurements that are easy to get wrong for RTL / centered Arabic
+' text, and avoids ComputeStatistics(wdStatisticLines), which on a
+' per-cell range counts paragraph-delimited lines (always 1 here)
+' rather than display lines.
+' =====================================================================
+Public Sub AdjustPoetryTableMargins()
+    Const HALO_PER_SIDE_CM As Single = 0.1
+    Const TOL_CM           As Single = 0.01
+    Const MAX_ITER         As Long = 30
+    Const WRAP_EPS_PTS     As Single = 1!
+
+    If Not Selection.Information(wdWithInTable) Then
+        MsgBox "Place the cursor inside a poetry table first.", _
+               vbExclamation, "Arabic Poetry Formatter"
+        Exit Sub
+    End If
+
+    Dim tbl As Table
+    Set tbl = Selection.Tables(1)
+
+    Dim origLeft As Single, origRight As Single
+    origLeft = tbl.LeftPadding
+    origRight = tbl.RightPadding
+
+    On Error GoTo Cleanup
+    Application.ScreenUpdating = False
+
+    ' Upper bound: half the narrowest cell. Padding above this would
+    ' give that cell a non-positive content area.
+    Dim cel As Cell
+    Dim hiPts As Single
+    hiPts = 1E+30
+    For Each cel In tbl.Range.Cells
+        If cel.Width / 2 < hiPts Then hiPts = cel.Width / 2
+    Next cel
+    If hiPts <= 0 Then GoTo Cleanup
+
+    ' Capture each cell's natural text vertical span at zero padding.
+    tbl.LeftPadding = 0
+    tbl.RightPadding = 0
+
+    Dim cellCount As Long
+    cellCount = tbl.Range.Cells.Count
+    If cellCount = 0 Then GoTo Cleanup
+
+    Dim baseline() As Single
+    ReDim baseline(1 To cellCount)
+
+    Dim hasAnyText As Boolean
+    Dim idx As Long
+    idx = 0
+    For Each cel In tbl.Range.Cells
+        idx = idx + 1
+        baseline(idx) = CellTextSpan(cel)
+        If CellHasText(cel) Then hasAnyText = True
+    Next cel
+
+    If Not hasAnyText Then
+        ' No text to size around. Restore and exit silently.
+        tbl.LeftPadding = origLeft
+        tbl.RightPadding = origRight
+        Application.ScreenUpdating = True
+        Exit Sub
+    End If
+
+    ' Bisect for the largest padding where no cell exceeds its baseline.
+    Dim lo As Single, hi As Single, mid As Single
+    Dim tolPts As Single
+    Dim iter As Long
+    lo = 0
+    hi = hiPts
+    tolPts = Application.CentimetersToPoints(TOL_CM)
+
+    For iter = 1 To MAX_ITER
+        If (hi - lo) <= tolPts Then Exit For
+        mid = (lo + hi) / 2
+        tbl.LeftPadding = mid
+        tbl.RightPadding = mid
+        If TableExceedsBaseline(tbl, baseline, WRAP_EPS_PTS) Then
+            hi = mid
+        Else
+            lo = mid
+        End If
+    Next iter
+
+    ' lo = largest padding that didn't introduce new wrapping.
+    ' Back off by 0.1 cm per side to leave a 0.2 cm total halo,
+    ' unless there isn't room for it.
+    Dim haloPts As Single
+    haloPts = Application.CentimetersToPoints(HALO_PER_SIDE_CM)
+
+    Dim finalPad As Single
+    If lo >= haloPts Then
+        finalPad = lo - haloPts
+    Else
+        finalPad = lo
+    End If
+    If finalPad < 0 Then finalPad = 0
+
+    tbl.LeftPadding = finalPad
+    tbl.RightPadding = finalPad
+
+    Application.ScreenUpdating = True
+    Exit Sub
+
+Cleanup:
+    On Error Resume Next
+    tbl.LeftPadding = origLeft
+    tbl.RightPadding = origRight
+    Application.ScreenUpdating = True
+End Sub
+
+Private Function TableExceedsBaseline(ByVal tbl As Table, _
+                                      ByRef baseline() As Single, _
+                                      ByVal eps As Single) As Boolean
+    Dim cel As Cell
+    Dim idx As Long
+    Dim span As Single
+    idx = 0
+    For Each cel In tbl.Range.Cells
+        idx = idx + 1
+        span = CellTextSpan(cel)
+        If span > baseline(idx) + eps Then
+            TableExceedsBaseline = True
+            Exit Function
+        End If
+    Next cel
+    TableExceedsBaseline = False
+End Function
+
+Private Function CellTextSpan(ByVal c As Cell) As Single
+    ' Vertical gap (points) between the cursor at the cell text's
+    ' logical start and at its logical end. ~0 when the text fits on
+    ' one display line; grows by ~one line height for each wrap.
+    Dim r As Range
+    Dim ch As String
+    Dim rs As Range, re As Range
+    Dim y1 As Single, y2 As Single
+
+    Set r = c.Range.Duplicate
+    Do While r.End > r.Start
+        ch = Right$(r.Text, 1)
+        If ch = vbCr Or ch = Chr$(7) Then
+            r.End = r.End - 1
+        Else
+            Exit Do
+        End If
+    Loop
+
+    If r.End <= r.Start Then
+        CellTextSpan = 0
+        Exit Function
+    End If
+
+    Set rs = r.Duplicate
+    rs.Collapse Direction:=wdCollapseStart
+    Set re = r.Duplicate
+    re.Collapse Direction:=wdCollapseEnd
+
+    y1 = rs.Information(wdVerticalPositionRelativeToPage)
+    y2 = re.Information(wdVerticalPositionRelativeToPage)
+
+    ' Information returns -1 when the position can't be determined.
+    If y1 < 0 Or y2 < 0 Then
+        Err.Raise vbObjectError + 513, "CellTextSpan", _
+                  "Unable to resolve cell layout position."
+    End If
+    End If
+
+    CellTextSpan = Abs(y2 - y1)
+End Function
+
+Private Function CellHasText(ByVal c As Cell) As Boolean
+    Dim s As String
+    Dim ch As String
+    s = c.Range.Text
+    Do While Len(s) > 0
+        ch = Right$(s, 1)
+        If ch = vbCr Or ch = Chr$(7) Then
+            s = Left$(s, Len(s) - 1)
+        Else
+            Exit Do
+        End If
+    Loop
+    CellHasText = (Len(Trim$(s)) > 0)
+End Function
+
+' =====================================================================
 ' Enter binding (Normal.dotm)
 ' =====================================================================
 Private Sub BindEnter(ByVal macroName As String)
