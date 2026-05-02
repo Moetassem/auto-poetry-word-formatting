@@ -68,6 +68,7 @@ Public Sub FormatArabicPoetryOnEnter()
     Dim previousPara As Paragraph
     Dim prevText As String
     Dim sepPos As Long
+    Dim adjacentTbl As Table
 
     wasInTable = Selection.Information(wdWithInTable)
     Selection.TypeParagraph
@@ -83,7 +84,12 @@ Public Sub FormatArabicPoetryOnEnter()
     If sepPos <= 0 Then Exit Sub
 
     Application.ScreenUpdating = False
-    ConvertLineToPoetryTable previousPara.Range, prevText, sepPos
+    Set adjacentTbl = AdjacentPoetryTable(previousPara)
+    If adjacentTbl Is Nothing Then
+        ConvertLineToPoetryTable previousPara.Range, prevText, sepPos
+    Else
+        AppendLineToPoetryTable adjacentTbl, previousPara, prevText, sepPos
+    End If
     Application.ScreenUpdating = True
 End Sub
 
@@ -153,6 +159,83 @@ Private Sub FillCell(ByVal c As Cell, ByVal text As String)
     c.Range.ParagraphFormat.ReadingOrder = wdReadingOrderRtl
     c.Range.ParagraphFormat.Alignment = wdAlignParagraphCenter
     c.VerticalAlignment = wdCellAlignVerticalCenter
+End Sub
+
+' =====================================================================
+' Append-vs-create dispatch helpers
+' ---------------------------------------------------------------------
+' If a 2-column poetry table sits above the just-finished `**`
+' paragraph -- with at most MAX_GAP empty paragraphs between them --
+' the new hemistichs become an extra row in that table instead of a
+' separate one, and the in-between blank paragraphs are eaten.
+' =====================================================================
+Private Function AdjacentPoetryTable(ByVal para As Paragraph) As Table
+    Const MAX_GAP As Long = 4
+    Dim cur As Paragraph
+    Dim gap As Long
+    Dim t As Table
+
+    On Error Resume Next
+    Set cur = para.Previous
+    On Error GoTo 0
+
+    gap = 0
+    Do While Not cur Is Nothing
+        If cur.Range.Information(wdWithInTable) Then
+            On Error Resume Next
+            Set t = cur.Range.Tables(1)
+            On Error GoTo 0
+            If t Is Nothing Then Exit Function
+            If t.Columns.Count <> 2 Then Exit Function
+            Set AdjacentPoetryTable = t
+            Exit Function
+        End If
+
+        If Len(StripTrailingCR(cur.Range.Text)) > 0 Then Exit Function
+
+        gap = gap + 1
+        If gap > MAX_GAP Then Exit Function
+
+        On Error Resume Next
+        Set cur = cur.Previous
+        On Error GoTo 0
+    Loop
+End Function
+
+Private Sub AppendLineToPoetryTable(ByVal tbl As Table, _
+                                    ByVal para As Paragraph, _
+                                    ByVal lineText As String, _
+                                    ByVal sepPos As Long)
+    Dim sadr As String, ajuz As String
+    Dim sepLen As Long
+    Dim existingAlign As Long
+    Dim newRow As Row
+    Dim slab As Range
+
+    sepLen = Len(POETRY_SEPARATOR)
+    sadr = Trim$(Left$(lineText, sepPos - 1))
+    ajuz = Trim$(Mid$(lineText, sepPos + sepLen))
+
+    ' Capture the existing top-row alignment so a previously snugged
+    ' table (wdAlignParagraphDistribute) keeps it on the new row.
+    existingAlign = tbl.Rows(1).Range.ParagraphFormat.Alignment
+
+    Set newRow = tbl.Rows.Add
+
+    FillCell newRow.Cells(1), sadr
+    FillCell newRow.Cells(2), ajuz
+
+    newRow.Range.ParagraphFormat.Alignment = existingAlign
+
+    ' Eat any 1-4 blank paragraphs between the (now-bigger) table and
+    ' the user's `**` line, plus the line itself. Building the slab
+    ' from the LIVE tbl.Range.End / para.Range.End AFTER Rows.Add
+    ' avoids the auto-expanding-Range bug where a Range captured
+    ' before Rows.Add silently grew over the new row.
+    Set slab = para.Range.Document.Range( _
+        Start:=tbl.Range.End, _
+        End:=para.Range.End)
+    slab.Delete
 End Sub
 
 ' =====================================================================
