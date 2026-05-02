@@ -167,8 +167,9 @@ End Sub
 '
 ' If there isn't room for the 0.2 cm halo, the halo is dropped and the
 ' margins go right up to the wrap boundary. If a cell already wraps at
-' zero padding, that cell's line count is taken as its baseline so the
-' pre-existing wrap doesn't keep the bisection pinned at zero.
+' zero padding, its natural vertical text span at zero padding is taken
+' as that cell's baseline so the pre-existing wrap doesn't keep the
+' bisection pinned at zero.
 '
 ' Implementation: bisect the padding value, and after each step ask
 ' Word's own layout engine whether any cell's text now spans more
